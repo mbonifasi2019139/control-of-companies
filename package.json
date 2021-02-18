@@ -1,7 +1,7 @@
 {
-    "name": "employeecontrol",
+    "name": "control-of-companies",
     "version": "1.0.0",
-    "description": "A web backend applicaction developed with Node JS, Mongo DB and Express.",
+    "description": "A backend web applicaction developed with Node JS, Mongo DB and Express.",
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
