@@ -3,68 +3,60 @@
 // imports
 const bcrypt = require("bcrypt-nodejs");
 const Company = require("../models/company-model");
+const User = require("../models/user-model");
 
 // ------------------- Company CRUD ------------------
-function saveCompany(req, res) {
+/*
+Cuando creamos una empresa tambien creamos su usuario.
+Para poder crear una empresa necesitamos el id de su usuario 
+*/
+function setCompany(req, res) {
     let company = new Company();
+    let userId = req.params.idU;
     let params = req.body;
 
-    if (
-        params.username &&
-        params.password &&
-        params.companyName &&
-        params.address &&
-        params.phone
-    ) {
-        Company.findOne({ username: params.username }, (err, companyFound) => {
+    if (params.companyName && params.address && params.phone) {
+        User.findById(userId, (err, userFound) => {
             if (err) {
-                res.status(500).send({ message: "General error" });
-            } else if (companyFound) {
-                res
-                    .status(200)
-                    .send({ message: "Username exists, please enter another username" });
-            } else {
-                bcrypt.hash(params.password, null, null, (err, passwordHashed) => {
-                    if (err) {
-                        res.status(500).send({ message: "General error" });
-                    } else if (passwordHashed) {
-                        company.username = params.username;
-                        company.password = params.passwordHashed;
-                        company.companyName = params.companyName;
-                        company.address = params.address;
-                        company.phone = params.phone;
+                return res.status(500).send({ message: "General error" });
+            } else if (userFound) {
+                company.companyName = params.companyName;
+                company.address = params.address;
+                company.phone = params.phone;
 
-                        company.save((err, companySaved) => {
-                            if (err) {
-                                res
-                                    .status(500)
-                                    .send({ message: "Error when trying to save company" });
-                            } else if (companySaved) {
-                                res.status(200).send({ message: "Company saved" });
+                company.save((err, companySaved) => {
+                    if (err) {
+                        return res
+                            .status(500)
+                            .send({ message: "General error saving a company" });
+                    } else if (companySaved) {
+                        User.findByIdAndUpdate(
+                            userId, { $push: { companyId: companySaved._id } }, { new: true },
+                            (err, userUpdated) => {
+                                if (err) {
+                                    return res
+                                        .status(500)
+                                        .send({ message: "General error updating user company" });
+                                } else if (userUpdated) {
+                                    return res.send({
+                                        message: "User updated and company saved correctly",
+                                    });
+                                } else {
+                                    return res.status(403).send({ message: "User not updated" });
+                                }
                             }
-                        });
+                        );
+                    } else {
+                        return res.status(403).send({ message: "Company no saved" });
                     }
                 });
+            } else {
+                return res.status(404).send({ message: "User not found" });
             }
         });
     } else {
-        res.status(200).send({ message: "Plese, enter all data" });
+        return res.status(400).send({ message: "Please, enter all data" });
     }
-}
-
-function getCompany(req, res) {
-    let companyId = req.params.id;
-    Company.findById(companyId).exec((err, company) => {
-        if (err) {
-            res.status(500).send({
-                message: `General error when trying to find a company with id: ${companyId}`,
-            });
-        } else if (company) {
-            res.status(200).send({ message: "Company found", company });
-        } else {
-            res.status(200).send({ meesage: "Company does not exists" });
-        }
-    });
 }
 
 function getCompanies(req, res) {
@@ -82,90 +74,68 @@ function getCompanies(req, res) {
 }
 
 function updateCompany(req, res) {
-    let companyId = req.params.id;
+    let userId = req.params.idU;
+    let companyId = req.params.idC;
     let update = req.body;
 
-    if (update.username) {
-        Company.findOne({ username: update.username }, (err, companyFound) => {
+    if (userId) {
+        User.findOne({ _id: userId, companyId: companyId }, (err, userFound) => {
             if (err) {
-                res.status(500).send({ message: "General error" });
-            } else if (companyFound) {
-                res.status(200).send({
-                    message: "Company's username already exists, please enter another username",
-                });
-            } else {
-                if (!update.password) {
-                    Company.findByIdAndUpdate(
-                        companyId,
-                        update, { new: true },
-                        (err, companyUpdated) => {
-                            if (err) {
-                                res
-                                    .status(500)
-                                    .send({ message: `Error trying to update a company` });
-                            } else if (companyUpdated) {
-                                res
-                                    .status(200)
-                                    .send({ message: "Company updated", companyUpdated });
-                            } else {
-                                res.status(200).send({ message: "Company does not exists" });
-                            }
+                return res.status(500).send({ message: "General error" });
+            } else if (userFound) {
+                Company.findByIdAndUpdate(
+                    companyId,
+                    update, { new: true },
+                    (err, companyUpdated) => {
+                        if (err) {
+                            return res
+                                .status(500)
+                                .send({ message: "General error updating a company" });
+                        } else if (companyUpdated) {
+                            return res.send({ message: "Company updated" });
+                        } else {
+                            return res.status(404).send({ message: "Company not updated" });
                         }
-                    );
-                } else {
-                    res.status(200).send({ message: "Yo cannot chage the password" });
-                }
+                    }
+                );
+            } else {
+                return res.status(404).send({ message: "User or company not found" });
             }
         });
-    } else {
-        if (!update.password) {
-            Company.findByIdAndUpdate(
-                companyId,
-                update, { new: true },
-                (err, companyUpdated) => {
-                    if (err) {
-                        res
-                            .status(500)
-                            .send({ message: `Error trying to update a company` });
-                    } else if (companyUpdated) {
-                        res
-                            .status(200)
-                            .send({ message: "Company updated", companyUpdated });
-                    } else {
-                        res.status(200).send({ message: "Company does not exists" });
-                    }
-                }
-            );
-        } else {
-            res.status(200).send({ message: "Yo cannot chage the password" });
-        }
     }
 }
 
 function removeCompany(req, res) {
-    let companyId = req.params.id;
-    Company.findByIdAndRemove(companyId, (err, companyRemoved) => {
-        if (err) {
-            res.status(500).send({ message: "Error trying to remove a company" });
-        } else if (companyRemoved) {
-            // jsonMessage(res, 500, "Company removed, I'm using a custom function :)");
-            res.status(200).send({ message: "Company removed" });
-        } else {
-            res
-                .status(200)
-                .send({ message: "Company does not exists or is already removed" });
+    let userId = req.params.idU;
+    let companyId = req.params.idC;
+
+    User.findOneAndUpdate({ _id: userId, companyId: companyId }, { $pull: { companyId: companyId } }, { new: true },
+        (err, userUpdated) => {
+            if (err) {
+                return res.status(500).send({ message: "General error" });
+            } else if (userUpdated) {
+                Company.findByIdAndRemove(companyId, (err, companyRemoved) => {
+                    if (err) {
+                        return res
+                            .status(500)
+                            .send({ message: "General error removing a company" });
+                    } else if (companyRemoved) {
+                        return res.send({ message: "Company removed" });
+                    } else {
+                        return res.status(403).send({ message: "Company no removed" });
+                    }
+                });
+            } else {
+                return res.status(404).send({ message: "User or company not found" });
+            }
         }
-    });
+    );
 }
-// A custom function to respond to the server
-// let jsonMessage = (res, port, serverMessage) => {
-//     return res.status(port).send({ meesage: serverMessage });
-// };
 
 // exports
 module.exports = {
-    saveCompany,
-    getCompany,
+    setCompany,
+    // getCompany,
     getCompanies,
     updateCompany,
     removeCompany,

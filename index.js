@@ -8,7 +8,7 @@ const port = 3200;
 mongoose.Promise = global.Promise;
 mongoose.set("useFindAndModify", false);
 mongoose
-    .connect("mongodb://localhost:27017/employeecontrol", {
+    .connect("mongodb://localhost:27017/controlofcompanies", {
         useNewUrlParser: true,
         useUnifiedTopology: true,
     })

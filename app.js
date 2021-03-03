@@ -2,7 +2,9 @@
 
 const express = require("express");
 const bodyParser = require("body-parser");
+const userRoutes = require("./routes/user-routes");
 const companyRoutes = require("./routes/company-routes");
+const employeeRoutes = require("./routes/employee-routes");
 
 // An instance of Exress
 const app = express();
@@ -22,6 +24,13 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use("/v1", companyRoutes);
+// User routes
+app.use("/api", userRoutes);
+
+// Company routes
+app.use("/api", companyRoutes);
+
+// Employee routes
+app.use("/api", employeeRoutes);
 
 module.exports = app;
