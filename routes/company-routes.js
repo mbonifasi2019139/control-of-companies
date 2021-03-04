@@ -4,6 +4,7 @@
 const express = require("express");
 const companyController = require("../controllers/company-controller");
 const mdAuth = require("../middlewares/authenticated");
+const PDFDocument = require("../pdf-document");
 
 const api = express.Router();
 
@@ -25,5 +26,8 @@ api.delete(
     "/:idU/deleteCompany/:idC", [mdAuth.ensureAuth, mdAuth.ensureAuthAdmin],
     companyController.removeCompany
 );
+
+// Create PDF file
+api.post("/createPDF/:idC", companyController.createCompanyPDF);
 
 module.exports = api;
