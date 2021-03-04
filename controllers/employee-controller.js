@@ -3,7 +3,7 @@
 const User = require("../models/user-model");
 const Employee = require("../models/employee-model");
 const Company = require("../models/company-model");
-const { param } = require("../routes/employee-routes");
+const pdf = require("../pdf-document");
 
 function saveEmployee(req, res) {
     let employee = Employee();
@@ -238,10 +238,8 @@ function searchEmployee(req, res) {
 
     // In the params
     let companyId = req.params.idC;
-
     let params = req.body;
 
-    // if(params){
     User.findOne({ _id: userTokenId, companyId: companyId },
         (err, companyFound) => {
             if (err) {
@@ -273,7 +271,48 @@ function searchEmployee(req, res) {
             }
         }
     ).populate();
-    // }
+}
+
+// Create a file
+function createEmployeesPDF(req, res) {
+    let companyId = req.params.idC;
+    let userTokenId = req.user.sub;
+
+    if (companyId) {
+        User.findOne({ _id: userTokenId, companyId }, (err, userFound) => {
+            if (err) {
+                return res.status(500).send({ message: "General error" });
+            } else if (userFound) {
+                Company.findById(companyId, (err, companyFound) => {
+                    if (err) {
+                        return res.status(500).send({ message: "General error" });
+                    } else if (companyFound) {
+                        pdf
+                            .pdfEmployees({
+                                company: companyFound.companyName,
+                                employees: companyFound.employees,
+                            })
+                            .then((msg) => {
+                                return res.send({ msg });
+                            })
+                            .catch((err) => {
+                                return res.status(500).send({
+                                    err,
+                                });
+                            });
+                    } else {
+                        return res.status(404).send({
+                            message: "Company not found",
+                        });
+                    }
+                }).populate("employees");
+            } else {
+                return res.status(404).send({ message: "User-company not found" });
+            }
+        });
+    } else {
+        return res.status(403).send({ message: "Please, enter companyId" });
+    }
 }
 
 module.exports = {
@@ -282,4 +321,5 @@ module.exports = {
     removeEmployee,
     getEmployess,
     searchEmployee,
+    createEmployeesPDF,
 };

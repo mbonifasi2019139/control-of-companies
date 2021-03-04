@@ -1,16 +1,10 @@
 "use strict";
 
 // imports
-const bcrypt = require("bcrypt-nodejs");
 const Company = require("../models/company-model");
 const User = require("../models/user-model");
-const PDFDocument = require("../pdf-document");
 
 // ------------------- Company CRUD ------------------
-/*
-Cuando creamos una empresa tambien creamos su usuario.
-Para poder crear una empresa necesitamos el id de su usuario 
-*/
 function setCompany(req, res) {
     let company = new Company();
     let userId = req.params.idU;
@@ -133,41 +127,10 @@ function removeCompany(req, res) {
     );
 }
 
-function createCompanyPDF(req, res) {
-    let companyId = req.params.idC;
-    // let userTokenId = req.user.sub;
-
-    if (companyId) {
-        Company.findById(companyId, (err, companyFound) => {
-            if (err) {
-                return res.status(500).send({ message: "General error" });
-            } else if (companyFound) {
-                PDFDocument.createPDF({
-                    company: companyFound.companyName,
-                    employees: companyFound.employees,
-                });
-
-                return res.send({
-                    message: "Successfully",
-                    employees: companyFound.employees,
-                });
-            } else {
-                return res.status(404).send({
-                    message: "Company not found",
-                });
-            }
-        }).populate("employees");
-    } else {
-        return res.status(403).send({ message: "Please, enter companyId" });
-    }
-}
-
 // exports
 module.exports = {
     setCompany,
-    // getCompany,
     getCompanies,
     updateCompany,
     removeCompany,
-    createCompanyPDF,
 };

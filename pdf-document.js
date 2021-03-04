@@ -1,52 +1,60 @@
 "use strict";
 
 const PDFDocument = require("pdfkit");
-const doc = new PDFDocument();
 const fs = require("fs");
-const { clear } = require("console");
 
-function createPDF(contentPDF) {
+const pdfEmployees = (contentPDF) => {
+    // recibimos los parametros que tiene los datos para crear el pdf
     let employeesCompany = contentPDF.employees;
     let company = contentPDF.company;
-    try {
-        // We are creating a directory for pdfs if does not exists
-        if (!fs.existsSync("./pdfs")) {
-            fs.mkdirSync("./pdfs");
-        }
 
-        // Create a pdf
-        doc.pipe(fs.createWriteStream(`./pdfs/Employees-${company}.pdf`));
+    // Creamos un directorio especifico para los pdfs que se vayan creando
+    if (!fs.existsSync("./pdfs")) {
+        fs.mkdirSync("./pdfs");
+    }
 
-        doc.font("Courier");
+    var createPDF = new Promise((resolve, reject) => {
+        try {
+            var doc = new PDFDocument();
+            // creamos el pdf con el nombre de la empresa
+            doc.pipe(fs.createWriteStream(`./pdfs/employees-${company}.pdf`));
 
-        /* We are setting the text*/
-        doc.fontSize(12).text(`${company}\n\n`, {
-            align: "center",
-            underline: "underline",
-        });
+            doc.font("Courier");
 
-        doc.text(`empleados:\n`);
+            /* Escribimos en el pdf*/
+            doc.fontSize(12).text(`${company}\n\n`, {
+                align: "center",
+                underline: "underline",
+            });
 
-        for (const employee of employeesCompany) {
-            let { name, lastname, position, department } = employee;
-            doc.text(
-                `
+            doc.text(`empleados:\n`);
+
+            for (const employee of employeesCompany) {
+                // Destructuramos el JSON
+                let { name, lastname, position, department } = employee;
+
+                doc.text(
+                    `
                 nombre: ${name}
                 apellido: ${lastname}
                 posicion: ${position}
                 departamento: ${department}
             `, {
-                    lineBreak: true,
-                    align: "left",
-                }
-            );
+                        lineBreak: true,
+                        align: "left",
+                    }
+                );
+            }
+
+            doc.end();
+
+            resolve("File created");
+        } catch (error) {
+            reject(error);
         }
+    });
 
-        doc.end();
-        return true;
-    } catch (error) {
-        return false;
-    }
-}
+    return createPDF;
+};
 
-module.exports = { createPDF };
+module.exports = { pdfEmployees };

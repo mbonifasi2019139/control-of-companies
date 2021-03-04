@@ -27,7 +27,4 @@ api.delete(
     companyController.removeCompany
 );
 
-// Create PDF file
-api.post("/createPDF/:idC", companyController.createCompanyPDF);
-
 module.exports = api;

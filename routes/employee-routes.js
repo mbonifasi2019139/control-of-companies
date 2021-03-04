@@ -31,4 +31,10 @@ api.post(
     employeeController.searchEmployee
 );
 
+// Create a PDF
+api.post(
+    "/createPDF/:idC", [mdAuth.ensureAuth, mdAuth.ensureAuthCompany],
+    employeeController.createEmployeesPDF
+);
+
 module.exports = api;
