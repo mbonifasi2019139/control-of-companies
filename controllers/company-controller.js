@@ -55,7 +55,7 @@ function setCompany(req, res) {
 }
 
 function getCompanies(req, res) {
-    Company.findOne({}, (err, companies) => {
+    Company.find({}, (err, companies) => {
         if (err) {
             res.status(500).send("General error");
         } else if (companies) {
@@ -73,7 +73,7 @@ function updateCompany(req, res) {
     let companyId = req.params.idC;
     let update = req.body;
 
-    if (userId) {
+    if (userId && companyId) {
         User.findOne({ _id: userId, companyId: companyId }, (err, userFound) => {
             if (err) {
                 return res.status(500).send({ message: "General error" });
@@ -97,6 +97,10 @@ function updateCompany(req, res) {
                 return res.status(404).send({ message: "User or company not found" });
             }
         });
+    } else {
+        return res
+            .status(403)
+            .send({ message: "Enter enter userId and companyId" });
     }
 }
 
@@ -104,27 +108,33 @@ function removeCompany(req, res) {
     let userId = req.params.idU;
     let companyId = req.params.idC;
 
-    User.findOneAndUpdate({ _id: userId, companyId: companyId }, { $pull: { companyId: companyId } }, { new: true },
-        (err, userUpdated) => {
-            if (err) {
-                return res.status(500).send({ message: "General error" });
-            } else if (userUpdated) {
-                Company.findByIdAndRemove(companyId, (err, companyRemoved) => {
-                    if (err) {
-                        return res
-                            .status(500)
-                            .send({ message: "General error removing a company" });
-                    } else if (companyRemoved) {
-                        return res.send({ message: "Company removed" });
-                    } else {
-                        return res.status(403).send({ message: "Company no removed" });
-                    }
-                });
-            } else {
-                return res.status(404).send({ message: "User or company not found" });
+    if (userId && companyId) {
+        User.findOneAndUpdate({ _id: userId, companyId: companyId }, { $pull: { companyId: companyId } }, { new: true },
+            (err, userUpdated) => {
+                if (err) {
+                    return res.status(500).send({ message: "General error" });
+                } else if (userUpdated) {
+                    Company.findByIdAndRemove(companyId, (err, companyRemoved) => {
+                        if (err) {
+                            return res
+                                .status(500)
+                                .send({ message: "General error removing a company" });
+                        } else if (companyRemoved) {
+                            return res.send({ message: "Company removed" });
+                        } else {
+                            return res.status(403).send({ message: "Company no removed" });
+                        }
+                    });
+                } else {
+                    return res.status(404).send({ message: "User or company not found" });
+                }
             }
-        }
-    );
+        );
+    } else {
+        return res
+            .status(403)
+            .send({ message: "Enter enter userId and companyId" });
+    }
 }
 
 // exports

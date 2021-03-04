@@ -4,7 +4,6 @@
 const express = require("express");
 const companyController = require("../controllers/company-controller");
 const mdAuth = require("../middlewares/authenticated");
-const PDFDocument = require("../pdf-document");
 
 const api = express.Router();
 
@@ -13,7 +12,7 @@ api.post(
     "/setCompany/:idU", [mdAuth.ensureAuth, mdAuth.ensureAuthAdmin],
     companyController.setCompany
 );
-// // api.get("/getCompany/:id", companyController.getCompany);
+
 api.get(
     "/getCompanies", [mdAuth.ensureAuth, mdAuth.ensureAuthAdmin],
     companyController.getCompanies

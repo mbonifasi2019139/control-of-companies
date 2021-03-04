@@ -3,7 +3,7 @@
 const User = require("../models/user-model");
 const Employee = require("../models/employee-model");
 const Company = require("../models/company-model");
-const pdf = require("../pdf-document");
+const pdf = require("../services/pdf-document");
 
 function saveEmployee(req, res) {
     let employee = Employee();
@@ -14,9 +14,7 @@ function saveEmployee(req, res) {
     let companyId = req.params.idC;
     let params = req.body;
 
-    if (userTokenId != userId) {
-        return res.status(500).send({ message: "You do not have permissions" });
-    } else {
+    if (userTokenId == userId && companyId) {
         User.findOne({ _id: userTokenId, companyId: companyId },
             (err, userFound) => {
                 if (err) {
@@ -62,6 +60,10 @@ function saveEmployee(req, res) {
                 }
             }
         );
+    } else {
+        return res
+            .status(403)
+            .send({ message: "Please, enter companyId or userId does not match" });
     }
 }
 
@@ -237,40 +239,59 @@ function searchEmployee(req, res) {
     let userTokenId = req.user.sub;
 
     // In the params
+    let userId = req.params.idU;
     let companyId = req.params.idC;
     let params = req.body;
 
-    User.findOne({ _id: userTokenId, companyId: companyId },
-        (err, companyFound) => {
+    if (userTokenId == userId && companyId) {
+        User.findOne({ _id: userTokenId, companyId }, (err, userFound) => {
             if (err) {
                 return res.status(500).send({ message: "General error" });
-            } else if (companyFound) {
-                Employee.findOne({
-                        $or: [
-                            { _id: companyFound.employees || params.id },
-                            { name: params.name },
-                            { lastname: params.lastname },
-                            { position: params.position },
-                            { department: params.params },
-                        ],
-                    },
-                    (err, employeesFound) => {
-                        if (err) {
-                            return res
-                                .status(500)
-                                .send({ message: "General error searching employees" });
-                        } else if (employeesFound) {
-                            return res.send({ message: "Employees found", employeesFound });
-                        } else {
-                            return res.status(404).send({ message: "Employees not found" });
-                        }
+            } else if (userFound) {
+                Company.findById(companyId, (err, companyFound) => {
+                    if (err) {
+                        return res.status(500).send({ message: "General error" });
+                    } else if (companyFound) {
+                        Employee.find({
+                                $and: [{ _id: companyFound.employees }],
+                                $or: [
+                                    { _id: params.idEmployee },
+                                    { name: params.name },
+                                    { lastname: params.lastname },
+                                    { position: params.position },
+                                    { department: params.department },
+                                ],
+                            },
+                            (err, employeesFound) => {
+                                if (err) {
+                                    return res
+                                        .status(500)
+                                        .send({ message: "General error searching employees" });
+                                } else if (employeesFound) {
+                                    return res.send({
+                                        message: "Employees found",
+                                        employeesFound,
+                                    });
+                                } else {
+                                    return res
+                                        .status(404)
+                                        .send({ message: "Employees not found" });
+                                }
+                            }
+                        );
+                    } else {
+                        return res.status(404).send({ message: "Company no match" });
                     }
-                );
+                }).populate();
             } else {
-                return res.status(404).send({ message: "Company no match" });
+                return res.status(404).send({ message: "User-company not found" });
             }
-        }
-    ).populate();
+        });
+    } else {
+        return res
+            .status(403)
+            .send({ message: "Enter companyId or userId no match" });
+    }
 }
 
 // Create a file
@@ -307,7 +328,7 @@ function createEmployeesPDF(req, res) {
                     }
                 }).populate("employees");
             } else {
-                return res.status(404).send({ message: "User-company not found" });
+                return res.status(404).send({ message: "User-company not match" });
             }
         });
     } else {

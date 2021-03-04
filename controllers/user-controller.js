@@ -110,7 +110,7 @@ function registerUser(req, res) {
                                         .status(500)
                                         .send({ message: "General error saving a user" });
                                 } else if (userSaved) {
-                                    return res.send({ message: "User saved" });
+                                    return res.send({ message: "User saved", userSaved });
                                 } else {
                                     return res.status(400).send({ message: "User no saved" });
                                 }

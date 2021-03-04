@@ -12,6 +12,11 @@ api.post(
     employeeController.saveEmployee
 );
 
+api.get(
+    "/:idU/getEmployess/:idC", [mdAuth.ensureAuth, mdAuth.ensureAuthCompany],
+    employeeController.getEmployess
+);
+
 api.post(
     "/:idU/updateEmployee/:idC/:idE", [mdAuth.ensureAuth, mdAuth.ensureAuthCompany],
     employeeController.updateEmployee
@@ -22,10 +27,6 @@ api.delete(
     employeeController.removeEmployee
 );
 
-api.get(
-    "/:idU/getEmployess/:idC", [mdAuth.ensureAuth, mdAuth.ensureAuthCompany],
-    employeeController.getEmployess
-);
 api.post(
     "/:idU/searchEmployee/:idC", [mdAuth.ensureAuth, mdAuth.ensureAuthCompany],
     employeeController.searchEmployee
